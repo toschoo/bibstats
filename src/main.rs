@@ -8,8 +8,6 @@ mod stats;
 fn main() {
     Lazy::force(&cli::PARSED_COMMANDS);
 
-    println!("Args: {:?}", cli::PARSED_COMMANDS);
-
     if cli::PARSED_COMMANDS.version {
         println!(env!("CARGO_PKG_VERSION"));
         std::process::exit(1);
@@ -28,8 +26,6 @@ fn main() {
         std::process::exit(1);
     }
     let fs = fs.unwrap();
-
-    println!("files: {:?}", fs);
 
     match stats::compute(b, fs) {
         Ok(authors) => stats::print_stats(
