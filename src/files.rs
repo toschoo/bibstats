@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -9,11 +10,15 @@ pub fn get_bib_file(bib: &Option<OsString>) -> Result<OsString, String> {
     }
 }
 
-pub fn get_all_files(files: &Vec<OsString>, dirs: &Vec<OsString>) -> Result<Vec<OsString>, String> {
-    let mut mainvec = files.clone();
-    let mut v = get_files_from_dirs(dirs)?;
-    mainvec.append(&mut v);
-    Ok(mainvec)
+pub fn get_all_files(
+    files: &Vec<OsString>,
+    dirs: &Vec<OsString>,
+    ext: &Vec<OsString>,
+) -> Result<Vec<OsString>, String> {
+    let mut v = files.clone();
+    let extset: HashSet<OsString> = ext.clone().into_iter().collect();
+    get_files_from_dirs(dirs, &extset, &mut v)?;
+    Ok(v)
 }
 
 fn find_bib() -> Result<OsString, String> {
@@ -36,29 +41,34 @@ fn find_bib() -> Result<OsString, String> {
     Err("no bib file found in directory".to_string())
 }
 
-fn get_files_from_dirs(dirs: &Vec<OsString>) -> Result<Vec<OsString>, String> {
-    let mut mainvec = Vec::new();
-
+fn get_files_from_dirs(
+    dirs: &Vec<OsString>,
+    extset: &HashSet<OsString>,
+    v: &mut Vec<OsString>,
+) -> Result<(), String> {
     for dir in dirs {
-        let mut v = get_files_from_dir(dir)?;
-        if !v.is_empty() {
-            mainvec.append(&mut v);
-        }
+        get_files_from_dir(dir, extset, v)?;
     }
-
-    Ok(mainvec)
+    Ok(())
 }
 
-fn get_files_from_dir(dir: &OsString) -> Result<Vec<OsString>, String> {
-    let mut v = Vec::new();
+fn get_files_from_dir(
+    dir: &OsString,
+    extset: &HashSet<OsString>,
+    v: &mut Vec<OsString>,
+) -> Result<(), String> {
     if let Ok(entries) = fs::read_dir(&dir) {
         for entry in entries {
             if let Ok(entry) = entry {
                 let fname = entry.file_name();
-                match Path::new(&fname).extension() {
+                let p = Path::new(&fname);
+                if p.is_dir() {
+                    get_files_from_dir(&fname, extset, v)?;
+                    continue;
+                }
+                match p.extension() {
                     Some(ext) => {
-                        if ext == "tex" {
-                            // use extensions!
+                        if extset.contains(ext) {
                             let p: PathBuf = [dir, &fname].iter().collect();
                             v.push(p.into_os_string());
                         }
@@ -68,5 +78,5 @@ fn get_files_from_dir(dir: &OsString) -> Result<Vec<OsString>, String> {
             }
         }
     }
-    Ok(v)
+    Ok(())
 }

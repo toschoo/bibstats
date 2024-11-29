@@ -24,7 +24,7 @@ pub struct Args {
     /// If no dir option is given, ext is ignored.
     /// Default: tex
     #[argh(option, short = 'e')]
-    pub ext: Vec<String>,
+    pub ext: Vec<OsString>,
     /// a list of files to be examined. It can be combined with dirs,
     /// in that case, all files found in the directories plus these files
     /// are considered. If no files and no directories are given,
@@ -38,7 +38,7 @@ pub struct Args {
     #[argh(switch, short = 't')]
     pub tsv: bool,
     /// if the output is produced as JSON,
-    /// create a JSON array, e.g.
+    /// create a JSON array, instead of a stream of single JSON objects.
     /// Default is to create a stream of JSON objects
     #[argh(switch, short = 'a')]
     pub jsonarray: bool,
@@ -52,7 +52,7 @@ impl Default for Args {
         Args {
             bib: None,
             dirs: Vec::default(),
-            ext: Vec::default(),
+            ext: vec!["tex".into()],
             files: Vec::default(),
             json: true,
             tsv: false,

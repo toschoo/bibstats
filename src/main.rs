@@ -20,14 +20,32 @@ fn main() {
     }
     let b = b.unwrap();
 
-    let fs = files::get_all_files(&cli::PARSED_COMMANDS.files, &cli::PARSED_COMMANDS.dirs);
+    let ext = if cli::PARSED_COMMANDS.ext.is_empty() {
+        vec!["tex".into()]
+    } else {
+        cli::PARSED_COMMANDS.ext.clone()
+    };
+
+    let ignore_files =
+        cli::PARSED_COMMANDS.files.is_empty() && cli::PARSED_COMMANDS.dirs.is_empty();
+
+    let fs = files::get_all_files(
+        &cli::PARSED_COMMANDS.files,
+        &cli::PARSED_COMMANDS.dirs,
+        &ext,
+    );
     if fs.is_err() {
         eprintln!("Error: {:?}", fs);
         std::process::exit(1);
     }
     let fs = fs.unwrap();
 
-    match stats::compute(b, fs) {
+    if !ignore_files && fs.is_empty() {
+        eprintln!("No files found!");
+        std::process::exit(1);
+    }
+
+    match stats::compute(b, fs, ignore_files) {
         Ok(authors) => stats::print_stats(
             authors,
             if cli::PARSED_COMMANDS.tsv {

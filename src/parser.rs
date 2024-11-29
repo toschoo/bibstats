@@ -464,6 +464,153 @@ mod test {
     }
 
     #[test]
+    fn test_fail_author_no_quotes() {
+        let s = r#"@book{ ideology,
+            author = Wei Wei Zhang, 
+            title = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_title_no_quotes() {
+        let s = r#"@book{ ideology,
+            author = "Wei Wei Zhang", 
+            title = Ideology and Economic Reform,
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_title_no_comma() {
+        let s = r#"@book{ ideology,
+            author = "Wei Wei Zhang", 
+            title = "Ideology and Economic Reform"
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_author_no_comma() {
+        let s = r#"@book{ ideology,
+            author = "Wei Wei Zhang"
+            title = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_key_no_comma() {
+        let s = r#"@book{ ideology
+            author = "Wei Wei Zhang",
+            title = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_no_key_no_comma() {
+        let s = r#"@book{ 
+            author = "Wei Wei Zhang",
+            title = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    //TODO: no key is ok
+    #[test]
+    fn test_fail_no_key() {
+        let s = r#"@book{ ,
+            author = "Wei Wei Zhang",
+            title = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(be) => {
+                println!("success: {:?}", be);
+                true
+            }
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_no_value() {
+        let s = r#"@book{ 
+            author = ,
+            title = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_no_key_in_header() {
+        let s = r#"@book{ 
+            author = "Karl Marx",
+            = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_no_pubtype() {
+        let s = r#"@{ 
+            author = "Karl Marx",
+            = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
+    fn test_fail_unknown_pubtype() {
+        let s = r#"@illustrierte{ 
+            author = "Karl Marx",
+            = "Ideology and Economic Reform",
+            date = 1996
+        }"#;
+        assert!(match parse_string(s.to_string(), Opts::default(), parse) {
+            Ok(_) => false,
+            Err(_) => true,
+        })
+    }
+
+    #[test]
     fn test_find_simple_cite() {
         let s = "this is some text\\cite{work}. With some more text.";
         assert!(

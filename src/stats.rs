@@ -8,6 +8,7 @@ use serde_json::json;
 use crate::parser;
 use crate::parser::BibEntry;
 
+// AuthorStats[author] -> map[title] -> count
 pub type AuthorStats = HashMap<String, HashMap<String, u32>>;
 
 pub enum Format {
@@ -15,13 +16,12 @@ pub enum Format {
     Tsv,
 }
 
-pub fn compute(bib: OsString, files: Vec<OsString>) -> ParseResult<AuthorStats> {
-    let bibvec = parse_bib_file(&bib)?;
-    let bibmap = bib_to_map(bibvec);
+pub fn compute(bib: OsString, files: Vec<OsString>, no_files: bool) -> ParseResult<AuthorStats> {
+    let bibmap = bib_to_map(parse_bib_file(&bib)?);
 
     let mut authostats = HashMap::new();
 
-    if files.is_empty() {
+    if no_files {
         for quote in get_quotes_from_stdin()? {
             match count_up(&quote, &bibmap, &mut authostats) {
                 Ok(()) => continue,
