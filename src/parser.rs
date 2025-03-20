@@ -235,6 +235,12 @@ pub fn collect_cites<R: Read>(s: &mut Stream<R>) -> ParseResult<Vec<String>> {
         if b != b'\\' {
             continue;
         }
+
+        if ignore(s) {
+            ignore_text(s)?;
+            continue;
+        }
+
         if !cite(s) {
             continue;
         }
@@ -267,6 +273,35 @@ fn cite<R: Read>(s: &mut Stream<R>) -> bool {
         Ok(()) => true,
         Err(_) => false,
     }
+}
+
+fn ignore<R: Read>(s: &mut Stream<R>) -> bool {
+    match s.string("ignore") {
+        Ok(()) => true,
+        Err(_) => false,
+    }
+}
+
+fn ignore_text<R: Read>(s: &mut Stream<R>) -> ParseResult<()> {
+    s.skip_whitespace()?;
+    let b = s.any_byte()?;
+    if b != b'{' {
+        return Ok(());
+    }
+
+    let mut count = 1;
+    loop {
+        let b = s.any_byte()?;
+        if b == b'}' {
+            count -= 1;
+            if count == 0 {
+                break;
+            }
+        } else if b == b'{' {
+            count += 1;
+        }
+    }
+    Ok(())
 }
 
 fn move_to_citekey<R: Read>(s: &mut Stream<R>) -> ParseResult<()> {
@@ -755,6 +790,45 @@ mod test {
                     eprintln!("error: {:?}", e);
                     false
                 }
+            }
+        )
+    }
+
+    #[test]
+    fn test_ignore_cite() {
+        let s = "this is some text\\ignore{\\cite[p. 1]{book, article, misc}.}";
+        assert!(
+            match parse_string(s.to_string(), Opts::default(), collect_cites) {
+                Ok(cites) => cites.len() == 0,
+                Err(e) => {
+                    eprintln!("error: {:?}", e);
+                    false
+                }
+            }
+        )
+    }
+
+    #[test]
+    fn test_ignore_cite_read_cite() {
+        let s = "this is some text\\ignore{\\cite[p. 1]{book, article, misc}.} and it goes on\\cite[p. 2]{book}";
+        assert!(
+            match parse_string(s.to_string(), Opts::default(), collect_cites) {
+                Ok(cites) => cites.len() == 1 && cites[0] == "book",
+                Err(e) => {
+                    eprintln!("error: {:?}", e);
+                    false
+                }
+            }
+        )
+    }
+
+    #[test]
+    fn test_fail_infinite_ignore() {
+        let s = "this is some text\\ignore{\\cite[p. 1]{book, article, misc}.";
+        assert!(
+            match parse_string(s.to_string(), Opts::default(), collect_cites) {
+                Ok(_) => false,
+                Err(_) => true,
             }
         )
     }
